@@ -4,6 +4,9 @@ server:
 spring:
   profiles:
     active: local
+  thymeleaf:
+    prefix: classpath:/templates/
+    suffix: .html
   h2:
     console:
       enabled: true
@@ -13,7 +16,6 @@ spring:
     username: sa
     password:
     driver-class-name: org.h2.Driver
-
   jpa:
     hibernate:
       ddl-auto: create
@@ -24,3 +26,7 @@ spring:
         format_sql: true
     database: h2
     show-sql: true
+
+logging:
+  level:
+    sql: debug

@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+    <head>
+        <title>Oauth2.0 TEST</title>
+        <meta charset="UTF-8">
+        <style>
+            .login-div {
+                width: 300px;
+                height: 200px;
+                outline: dashed 1px black;
+            }
+            .login-sub-div {
+                width: 100%;
+                margin-top: 10px;
+            }
+            .title-label {
+                width: 20%;
+                display: inline-block;
+                text-align: center;
+            }
+            .text-label {
+                width: 70%;
+                display: inline;
+            }
+            .btn-image {
+                width: 100px;
+                cursor: pointer;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="login-div">
+            <div style="text-align: center">Login</div>
+            <div style="height: 62px">
+                <div style="width: 70%; float: left">
+                    <div class="login-sub-div">
+                        <div class="title-label">ID</div>
+                        <div class="text-label">
+                            <input type="text" th:text="${id}">
+                        </div>
+                    </div>
+                    <div class="login-sub-div">
+                        <div class="title-label">PW</div>
+                        <div class="text-label">
+                            <input type="text" th:text="${pw}">
+                        </div>
+                    </div>
+                </div>
+                <div style="width: 25%; height: 100%; display: inline-block;">
+                    <input style="height: 89%;margin-top: 9px;" type="button" value="Login">
+                </div>
+            </div>
+            <div style="text-align: center; margin-top: 20px;">
+                <img src="http://127.0.0.1:8000/api/attach-image?type=GOOGLE"
+                     class="btn-image" onclick="location.href='http://localhost:8000/oauth2/authorization/google?redirect_uri=http://localhost:8080/main'"/>
+                <br>
+                <img src="http://127.0.0.1:8000/api/attach-image?type=NAVER" class="btn-image"
+                />
+                <br>
+                <img src="http://127.0.0.1:8000/api/attach-image?type=KAKAO" class="btn-image"
+                />
+            </div>
+        </div>
+    </body>
+</html>

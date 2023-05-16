@@ -1,4 +1,4 @@
-package com.example.springoauth.domain.users.entity;
+package com.example.springoauth.entity.users;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -49,6 +49,14 @@ public class Users {
     @Column
     @Comment("파일이미지")
     private String fileImage;
+
+    @Column(length = 15)
+    @Enumerated(EnumType.STRING)
+    private ProviderType providerType;
+
+    @Column(length = 15)
+    @Enumerated(EnumType.STRING)
+    private RoleType roleType;
 
     @Column
     @Comment("생성일")
