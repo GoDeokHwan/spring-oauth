@@ -1,4 +1,4 @@
-package com.example.springoauth.domain.user.entity;
+package com.example.springoauth.domain.users.entity;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
