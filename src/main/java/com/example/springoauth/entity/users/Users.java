@@ -22,9 +22,9 @@ public class Users {
     @Comment("ID")
     private Long id;
 
-    @Column(length = 63)
+    @Column(length = 127)
     @Comment("로그인ID")
-    private String loginId;
+    private String email;
 
     @Column(length = 63)
     @Comment("이름")
@@ -33,10 +33,6 @@ public class Users {
     @Column(length = 511)
     @Comment("비밀번호")
     private String password;
-
-    @Column(length = 127)
-    @Comment("이메일")
-    private String email;
 
     @Column
     @Comment("토큰")
@@ -67,4 +63,13 @@ public class Users {
     @Comment("수정일")
     @UpdateTimestamp
     private LocalDateTime modifyDt;
+
+    public static Users ofProviderTypeByOrigin(String email, String password) {
+        Users instance = new Users();
+        instance.email = email;
+        instance.password = password;
+        instance.providerType = ProviderType.ORIGIN;
+        instance.roleType = RoleType.USER;
+        return instance;
+    }
 }

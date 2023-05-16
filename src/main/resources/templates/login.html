@@ -3,10 +3,49 @@
     <head>
         <title>Oauth2.0 TEST</title>
         <meta charset="UTF-8">
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+<!--        <script src="https://cdn.jsdelivr.net/jquery.ajax-cross-origin/1.0.6/jquery.ajax-cross-origin.min.js"></script>-->
+        <script th:inline="javascript">
+            $(document).ready(() => {
+                $.ajaxPrefilter('json', function(options, orig, jqXHR) {
+                    if (options.crossDomain && !$.support.cors) return 'jsonp'
+                });
+
+                $("#join").click(() => {
+                    $("#join-div").show();
+                });
+
+                $("#join-send").click(() => {
+                   $.ajax({
+                       url: "http://localhost:8000/api/users/join"
+                       , method: "POST"
+                       , headers: {"Access-Control-Allow-Origin" : "*"}
+                       , crossDomain: true
+                       , dataType: "json"
+                       , contentType: "application/json; charset=utf-8"
+                       , data: JSON.stringify ({
+                           email: $("#join-email").val()
+                           ,password: $("#join-password").val()
+                       })
+                   })
+                       .done((data) => {
+                           if (data) {
+                               $("#join-div").hide();
+                           } else {
+                               alert("저장 실패 재시도 필요");
+                           }
+                       })
+                       .fail((xhr, status, errorThen) => {
+                           console.error(xhr.responseText)
+                       })
+                    ;
+                });
+            })
+        </script>
         <style>
             .login-div {
                 width: 300px;
-                height: 200px;
+                height: 220px;
                 outline: dashed 1px black;
             }
             .login-sub-div {
@@ -19,7 +58,7 @@
                 text-align: center;
             }
             .text-label {
-                width: 70%;
+                width: 60%;
                 display: inline;
             }
             .btn-image {
@@ -34,7 +73,7 @@
             <div style="height: 62px">
                 <div style="width: 70%; float: left">
                     <div class="login-sub-div">
-                        <div class="title-label">ID</div>
+                        <div class="title-label">Email</div>
                         <div class="text-label">
                             <input type="text" th:text="${id}">
                         </div>
@@ -50,7 +89,10 @@
                     <input style="height: 89%;margin-top: 9px;" type="button" value="Login">
                 </div>
             </div>
-            <div style="text-align: center; margin-top: 20px;">
+            <div style="margin-top: 10px; text-align: center;">
+                <input type="button" id="join" value="회원가입" />
+            </div>
+            <div style="text-align: center; margin-top: 10px;">
                 <img src="http://127.0.0.1:8000/api/attach-image?type=GOOGLE"
                      class="btn-image" onclick="location.href='http://localhost:8000/oauth2/authorization/google?redirect_uri=http://localhost:8080/main'"/>
                 <br>
@@ -59,6 +101,32 @@
                 <br>
                 <img src="http://127.0.0.1:8000/api/attach-image?type=KAKAO" class="btn-image"
                 />
+            </div>
+        </div>
+        <div id="join-div" style="text-align: center; width: 300px; display: none;">
+            <h1>Join</h1>
+            <div>
+                <div class="login-sub-div">
+                    <div class="title-label">Email</div>
+                    <div class="text-label">
+                        <input type="text" id="join-email">
+                    </div>
+                </div>
+                <div>
+                    <div class="title-label">Password</div>
+                    <div class="text-label">
+                        <input type="password" id="join-password">
+                    </div>
+                </div>
+                <div>
+                    <div class="title-label">Re Passowrd</div>
+                    <div class="text-label">
+                        <input type="password" id="join-re-password">
+                    </div>
+                </div>
+                <div>
+                    <input type="button" id="join-send" value="가입하기">
+                </div>
             </div>
         </div>
     </body>
