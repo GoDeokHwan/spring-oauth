@@ -72,4 +72,8 @@ public class Users {
         instance.roleType = RoleType.USER;
         return instance;
     }
+
+    public void changeToken(String token) {
+        this.token = token;
+    }
 }

@@ -10,6 +10,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -24,5 +27,24 @@ public class UsersService {
 
         // TODO Mapper 는 향후 도입
         return UsersDTO.ofUser(usersRepository.save(users));
+    }
+
+    public void updateToken(String loginId, String token) {
+        Users users = usersRepository.findByEmail(loginId)
+                .orElseThrow(() -> new IllegalArgumentException());
+
+        users.changeToken(token);
+    }
+
+    public List<UsersDTO> get() {
+        return usersRepository.findAll()
+                .stream()
+                .map(UsersDTO::ofUser)
+                .collect(Collectors.toList());
+    }
+
+    public Users getByEmail(String email) {
+        return usersRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException());
     }
 }

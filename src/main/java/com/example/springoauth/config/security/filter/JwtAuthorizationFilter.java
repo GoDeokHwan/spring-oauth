@@ -3,6 +3,9 @@ package com.example.springoauth.config.security.filter;
 import com.example.springoauth.config.binder.JwtProperties;
 import com.example.springoauth.config.security.entity.PrincipalDetails;
 import com.example.springoauth.config.security.service.PrincipalDetailsService;
+import com.example.springoauth.domain.users.event.JwtTokenValidationEvent;
+import com.example.springoauth.domain.users.service.UsersService;
+import com.example.springoauth.entity.users.Users;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jws;
 import io.jsonwebtoken.Jwts;
@@ -12,6 +15,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.security.SecurityProperties;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -22,15 +26,21 @@ import org.springframework.util.StringUtils;
 import java.io.IOException;
 import java.util.Date;
 
+/**
+ * 토큰 권한 확인 필터
+ * */
 @Slf4j
 public class JwtAuthorizationFilter extends BasicAuthenticationFilter {
 
     private final JwtProperties jwtProperties;
     private final PrincipalDetailsService principalDetailsService;
-    public JwtAuthorizationFilter(AuthenticationManager authenticationManager, JwtProperties jwtProperties, PrincipalDetailsService principalDetailsService) {
+    private final ApplicationEventPublisher publisher;
+
+    public JwtAuthorizationFilter(AuthenticationManager authenticationManager, JwtProperties jwtProperties, PrincipalDetailsService principalDetailsService, ApplicationEventPublisher publisher) {
         super(authenticationManager);
         this.jwtProperties = jwtProperties;
         this.principalDetailsService = principalDetailsService;
+        this.publisher = publisher;
     }
 
     @Override
@@ -47,7 +57,7 @@ public class JwtAuthorizationFilter extends BasicAuthenticationFilter {
                 SecurityContextHolder.getContext().setAuthentication(getAuth(jwtToken));
             }
 
-        }catch (Exception e) {
+        } catch (Exception e) {
             throw new RuntimeException(e);
         }
 
@@ -82,11 +92,7 @@ public class JwtAuthorizationFilter extends BasicAuthenticationFilter {
                 ret = false;
             }
 
-            // TODO TOKEN 찾기 필요
-//            String token = redisSubscriber.get(RedisTopicContact.getTopic(jws.getBody().getSubject())).toString();
-//            if (token == null && !token.equals(jwtToken)) {
-//                throw ErrorResponse.of(ErrorCode.UNAUTHORIZED);
-//            }
+            publisher.publishEvent(new JwtTokenValidationEvent(jws.getBody().getSubject(), jwtToken));
         } catch (Exception e) {
             ret = false;
         }

@@ -6,9 +6,12 @@ import com.example.springoauth.entity.users.dto.UsersDTO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.util.List;
 
 @RestController
 @Slf4j
@@ -22,5 +25,10 @@ public class UsersController {
             @RequestBody JoinRequest request
     ) {
         return ResponseEntity.ok(usersService.join(request));
+    }
+
+    @GetMapping("/api/users")
+    public ResponseEntity<List<UsersDTO>> get() {
+        return ResponseEntity.ok(usersService.get());
     }
 }

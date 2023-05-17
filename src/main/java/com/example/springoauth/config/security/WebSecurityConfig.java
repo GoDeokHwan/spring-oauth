@@ -5,10 +5,13 @@ import com.example.springoauth.config.binder.JwtProperties;
 import com.example.springoauth.config.security.filter.JwtAuthenticationFilter;
 import com.example.springoauth.config.security.filter.JwtAuthorizationFilter;
 import com.example.springoauth.config.security.service.PrincipalDetailsService;
+import com.example.springoauth.domain.users.service.UsersService;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.security.servlet.PathRequest;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpStatus;
@@ -43,6 +46,8 @@ public class WebSecurityConfig {
     private final JwtProperties jwtProperties;
     private final PrincipalDetailsService principalDetailsService;
     private final AuthenticationConfiguration authenticationConfiguration;
+    private final ApplicationEventPublisher publisher;
+    private final ObjectMapper objectMapper;
 
     /**
      * Spring Security 를 적용하지 않을 리소스
@@ -148,12 +153,12 @@ public class WebSecurityConfig {
     }
 
     public JwtAuthenticationFilter getJwtAuthenticationFilter() throws Exception {
-        JwtAuthenticationFilter filter = new JwtAuthenticationFilter(jwtProperties);
+        JwtAuthenticationFilter filter = new JwtAuthenticationFilter(jwtProperties, publisher, objectMapper);
         filter.setAuthenticationManager(authenticationManager(authenticationConfiguration));
         return filter;
     }
 
     public JwtAuthorizationFilter getJwtAuthorizationFilter() throws Exception {
-        return new JwtAuthorizationFilter(authenticationManager(authenticationConfiguration), jwtProperties, principalDetailsService);
+        return new JwtAuthorizationFilter(authenticationManager(authenticationConfiguration), jwtProperties, principalDetailsService, publisher);
     }
 }

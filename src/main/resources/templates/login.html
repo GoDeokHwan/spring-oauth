@@ -30,6 +30,11 @@
                    })
                        .done((data) => {
                            if (data) {
+
+                               $("#login-email").val($("#join-email").val());
+                               $("#join-email").val('');
+                               $("#login-password").val($("#join-password").val());
+                               $("#join-password").val('');
                                $("#join-div").hide();
                            } else {
                                alert("저장 실패 재시도 필요");
@@ -39,6 +44,50 @@
                            console.error(xhr.responseText)
                        })
                     ;
+                });
+
+                $("#login-btn").click(() => {
+                    $.ajax({
+                        url: "http://127.0.0.1:8000/api/login"
+                        , method: "POST"
+                        , headers: {"Access-Control-Allow-Origin" : "*"}
+                        , crossDomain: true
+                        , dataType: "json"
+                        , contentType: "application/json; charset=utf-8"
+                        , data: JSON.stringify ({
+                            email: $("#login-email").val()
+                            ,password: $("#login-password").val()
+                        })
+                    })
+                        .done((data) => {
+                            if (data) {
+                                $("#token").val('Bearer '+data.AccessToken)
+                                $("#test-page").show()
+                            }
+                        })
+                        .fail((xhr, status, errorThen) => {
+                            console.error(xhr.responseText)
+                        })
+                    ;
+                });
+
+                $("#text-button").click(() => {
+                    $.ajax({
+                        url: "http://127.0.0.1:8000/api/users"
+                        , method: "GET"
+                        , headers: {
+                            "Access-Control-Allow-Origin" : "*"
+                            , "Authorization": $("#token").val()
+                        }
+                        , dataType: "json"
+                        , contentType: "application/json; charset=utf-8"
+                    })
+                        .done((data) => {
+                            $("#result").html(data);
+                        })
+                        .fail((xhr, status, errorThen) => {
+                            console.error(xhr.responseText)
+                        })
                 });
             })
         </script>
@@ -75,18 +124,18 @@
                     <div class="login-sub-div">
                         <div class="title-label">Email</div>
                         <div class="text-label">
-                            <input type="text" th:text="${id}">
+                            <input type="text" id="login-email">
                         </div>
                     </div>
                     <div class="login-sub-div">
                         <div class="title-label">PW</div>
                         <div class="text-label">
-                            <input type="text" th:text="${pw}">
+                            <input type="text" id="login-password">
                         </div>
                     </div>
                 </div>
                 <div style="width: 25%; height: 100%; display: inline-block;">
-                    <input style="height: 89%;margin-top: 9px;" type="button" value="Login">
+                    <input style="height: 89%;margin-top: 9px;" type="button" value="Login" id="login-btn">
                 </div>
             </div>
             <div style="margin-top: 10px; text-align: center;">
@@ -109,25 +158,33 @@
                 <div class="login-sub-div">
                     <div class="title-label">Email</div>
                     <div class="text-label">
-                        <input type="text" id="join-email">
+                        <input type="text" id="join-email" value="system@naver.com">
                     </div>
                 </div>
                 <div>
                     <div class="title-label">Password</div>
                     <div class="text-label">
-                        <input type="password" id="join-password">
+                        <input type="password" id="join-password" value="1234">
                     </div>
                 </div>
                 <div>
                     <div class="title-label">Re Passowrd</div>
                     <div class="text-label">
-                        <input type="password" id="join-re-password">
+                        <input type="password" id="join-re-password" value="1234">
                     </div>
                 </div>
                 <div>
                     <input type="button" id="join-send" value="가입하기">
                 </div>
             </div>
+        </div>
+        <div id="test-page">
+            <div>
+                <p>토큰</p>
+                <input type="text" id="token">
+            </div>
+            <input type="button" id="text-button" value="테스트 발송">
+            <div id="result"></div>
         </div>
     </body>
 </html>
