@@ -1,11 +1,14 @@
 package com.example.springoauth.config.security;
 
 import com.example.springoauth.config.binder.CorsProperties;
-import com.example.springoauth.config.binder.JwtProperties;
+import com.example.springoauth.config.binder.AuthProperties;
 import com.example.springoauth.config.security.filter.JwtAuthenticationFilter;
 import com.example.springoauth.config.security.filter.JwtAuthorizationFilter;
+import com.example.springoauth.config.security.handler.OAuth2AuthenticationFailureHandler;
+import com.example.springoauth.config.security.handler.OAuth2AuthenticationSuccessHandler;
+import com.example.springoauth.config.security.oauth.service.CustomOAuth2UserService;
+import com.example.springoauth.config.security.repository.OAuth2AuthorizationRequestBasedOnCookieRepository;
 import com.example.springoauth.config.security.service.PrincipalDetailsService;
-import com.example.springoauth.domain.users.service.UsersService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -14,7 +17,6 @@ import org.springframework.boot.autoconfigure.security.servlet.PathRequest;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -25,11 +27,11 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.oauth2.client.web.HttpSessionOAuth2AuthorizationRequestRepository;
 import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import org.springframework.security.web.authentication.logout.HttpStatusReturningLogoutSuccessHandler;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -43,11 +45,12 @@ import java.util.Arrays;
 public class WebSecurityConfig {
 
     private final CorsProperties corsProperties;
-    private final JwtProperties jwtProperties;
+    private final AuthProperties authProperties;
     private final PrincipalDetailsService principalDetailsService;
     private final AuthenticationConfiguration authenticationConfiguration;
     private final ApplicationEventPublisher publisher;
     private final ObjectMapper objectMapper;
+    private final CustomOAuth2UserService oAuth2UserService;
 
     /**
      * Spring Security 를 적용하지 않을 리소스
@@ -57,7 +60,8 @@ public class WebSecurityConfig {
         return web -> web.ignoring().requestMatchers(
                 PathRequest.toH2Console())
                 .requestMatchers("/login"
-                        , "/api/attach-image")
+                        , "/api/attach-image"
+                        ,"/", "/favicon.ico", "/error")
                 ;
     }
 
@@ -126,14 +130,37 @@ public class WebSecurityConfig {
         return corsConfigSource;
     }
 
+    /*
+     * 쿠키 기반 인가 Repository
+     * 인가 응답을 연계 하고 검증할 때 사용.
+     * */
+    @Bean
+    public OAuth2AuthorizationRequestBasedOnCookieRepository oAuth2AuthorizationRequestBasedOnCookieRepository() {
+        return new OAuth2AuthorizationRequestBasedOnCookieRepository();
+    }
+
+    /**
+     * Oauth 인증 성공 핸들러
+     * */
+    @Bean
+    public OAuth2AuthenticationSuccessHandler oAuth2AuthenticationSuccessHandler() {
+        return new OAuth2AuthenticationSuccessHandler(authProperties, publisher, objectMapper, oAuth2AuthorizationRequestBasedOnCookieRepository());
+    }
+
+    /**
+     * Oauth 인증 실패 핸들러
+     * */
+    @Bean
+    public OAuth2AuthenticationFailureHandler oAuth2AuthenticationFailureHandler() {
+        return new OAuth2AuthenticationFailureHandler();
+    }
+
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
                 .authorizeHttpRequests()
                 .requestMatchers("/api/login", "/api/users/join"
-                        ,"/h2-console",
-                        "/h2-console/*"
-                        , "/h2-console/**")
+                ,"/", "/favicon.ico")
                 .permitAll()
                 .anyRequest().authenticated()
                 .and().formLogin().disable()
@@ -145,20 +172,36 @@ public class WebSecurityConfig {
 //                .logoutSuccessHandler(new HttpStatusReturningLogoutSuccessHandler(HttpStatus.OK)).permitAll()
 //                .and()
                 .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-                .and().exceptionHandling().accessDeniedHandler(accessDeniedHandler()).authenticationEntryPoint(authenticationEntryPoint())
-                .and().addFilter(getJwtAuthenticationFilter()).addFilterBefore(getJwtAuthorizationFilter(), UsernamePasswordAuthenticationFilter.class)
+                .and().exceptionHandling().accessDeniedHandler(accessDeniedHandler()).
+                authenticationEntryPoint(authenticationEntryPoint())
+                .and()
+                .addFilter(getJwtAuthenticationFilter()).addFilterBefore(getJwtAuthorizationFilter(), UsernamePasswordAuthenticationFilter.class)
+                .oauth2Login().loginPage("/login")
+                .authorizationEndpoint()
+                .baseUri("/oauth2/authorization")
+                .authorizationRequestRepository(oAuth2AuthorizationRequestBasedOnCookieRepository())
+                .and()
+                .redirectionEndpoint()
+                .baseUri("/*/oauth2/code/*")
+                .and()
+                .userInfoEndpoint()
+                .userService(oAuth2UserService)
+                .and()
+                .successHandler(oAuth2AuthenticationSuccessHandler())
+                .failureHandler(oAuth2AuthenticationFailureHandler())
         ;
 
         return http.build();
     }
 
     public JwtAuthenticationFilter getJwtAuthenticationFilter() throws Exception {
-        JwtAuthenticationFilter filter = new JwtAuthenticationFilter(jwtProperties, publisher, objectMapper);
+        JwtAuthenticationFilter filter = new JwtAuthenticationFilter(authProperties, publisher, objectMapper);
         filter.setAuthenticationManager(authenticationManager(authenticationConfiguration));
         return filter;
     }
 
     public JwtAuthorizationFilter getJwtAuthorizationFilter() throws Exception {
-        return new JwtAuthorizationFilter(authenticationManager(authenticationConfiguration), jwtProperties, principalDetailsService, publisher);
+        return new JwtAuthorizationFilter(authenticationManager(authenticationConfiguration), authProperties, principalDetailsService, publisher);
     }
+
 }

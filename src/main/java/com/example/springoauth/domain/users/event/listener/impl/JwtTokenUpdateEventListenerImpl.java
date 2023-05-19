@@ -17,7 +17,7 @@ public class JwtTokenUpdateEventListenerImpl implements JwtTokenUpdateEventListe
     @Override
     public void handlerJwtTokenUpdateEventListener(JwtTokenUpdateEvent event) throws IllegalAccessException {
         if (StringUtils.hasText(event.getLoginId())) {
-            usersService.updateToken(event.getLoginId(), event.getToken());
+            usersService.updateToken(event.getLoginId(), event.getToken(), event.getRefreshToken());
         } else {
             throw new IllegalAccessException();
         }

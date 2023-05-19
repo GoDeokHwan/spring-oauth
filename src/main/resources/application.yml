@@ -1,5 +1,6 @@
 server:
   port: 8000
+  forward-headers-strategy: none
 
 spring:
   profiles:
@@ -26,15 +27,30 @@ spring:
         format_sql: true
     database: h2
     show-sql: true
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            client-id: 403181105505-nsmsfa577737c02ohjt57ddg8h1c74ut.apps.googleusercontent.com
+            client-secret: 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
+            scope:
+              - email
+              - profile
 
 logging:
   level:
     sql: debug
 
 #jwt
-jwt:
-  secret: '3lk23mklz9scbaslkgbkl124lq4k6lk26nlkn'
-  expiration: 3600000
+auth:
+  jwt:
+    secret: '3lk23mklz9scbaslkgbkl124lq4k6lk26nlkn'
+    expiration: 1800000
+    refreshTokenExpiry: 604800000
+  oauth2:
+    authorizedRedirectUris:
+      - http://127.0.0.1:8000/oauth/redirect
 
 # cors 설정
 cors:

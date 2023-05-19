@@ -1,11 +1,9 @@
 package com.example.springoauth.config.security.filter;
 
-import com.example.springoauth.config.binder.JwtProperties;
+import com.example.springoauth.config.binder.AuthProperties;
 import com.example.springoauth.config.security.entity.PrincipalDetails;
 import com.example.springoauth.config.security.service.PrincipalDetailsService;
 import com.example.springoauth.domain.users.event.JwtTokenValidationEvent;
-import com.example.springoauth.domain.users.service.UsersService;
-import com.example.springoauth.entity.users.Users;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jws;
 import io.jsonwebtoken.Jwts;
@@ -14,9 +12,9 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.boot.autoconfigure.security.SecurityProperties;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.InternalAuthenticationServiceException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -32,13 +30,13 @@ import java.util.Date;
 @Slf4j
 public class JwtAuthorizationFilter extends BasicAuthenticationFilter {
 
-    private final JwtProperties jwtProperties;
+    private final AuthProperties authProperties;
     private final PrincipalDetailsService principalDetailsService;
     private final ApplicationEventPublisher publisher;
 
-    public JwtAuthorizationFilter(AuthenticationManager authenticationManager, JwtProperties jwtProperties, PrincipalDetailsService principalDetailsService, ApplicationEventPublisher publisher) {
+    public JwtAuthorizationFilter(AuthenticationManager authenticationManager, AuthProperties authProperties, PrincipalDetailsService principalDetailsService, ApplicationEventPublisher publisher) {
         super(authenticationManager);
-        this.jwtProperties = jwtProperties;
+        this.authProperties = authProperties;
         this.principalDetailsService = principalDetailsService;
         this.publisher = publisher;
     }
@@ -51,6 +49,8 @@ public class JwtAuthorizationFilter extends BasicAuthenticationFilter {
 
             if(StringUtils.hasText(tokenHeader) && tokenHeader.startsWith("Bearer")) {
                 jwtToken = tokenHeader.replace("Bearer ", "");
+            } else {
+                jwtToken = request.getParameterMap().get("token")[0];
             }
 
             if(jwtToken != null && isValid(jwtToken)) {
@@ -58,7 +58,7 @@ public class JwtAuthorizationFilter extends BasicAuthenticationFilter {
             }
 
         } catch (Exception e) {
-            throw new RuntimeException(e);
+            throw new InternalAuthenticationServiceException(e.getMessage(), e.getCause());
         }
 
         chain.doFilter(request, response);
@@ -67,7 +67,7 @@ public class JwtAuthorizationFilter extends BasicAuthenticationFilter {
     private Authentication getAuth(String jwtToken) {
         PrincipalDetails user = (PrincipalDetails)principalDetailsService.loadUserByUsername(
                 Jwts.parserBuilder()
-                        .setSigningKey(jwtProperties.getSecretKey())
+                        .setSigningKey(authProperties.getSecretKey())
                         .build()
                         .parseClaimsJws(jwtToken).getBody()
                         .getSubject()
@@ -82,7 +82,7 @@ public class JwtAuthorizationFilter extends BasicAuthenticationFilter {
 
         try {
             jws = Jwts.parserBuilder()
-                    .setSigningKey(jwtProperties.getSecretKey())
+                    .setSigningKey(authProperties.getSecretKey())
                     .build()
                     .parseClaimsJws(jwtToken);
 

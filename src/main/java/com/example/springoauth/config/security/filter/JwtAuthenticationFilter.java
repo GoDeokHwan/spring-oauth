@@ -1,6 +1,6 @@
 package com.example.springoauth.config.security.filter;
 
-import com.example.springoauth.config.binder.JwtProperties;
+import com.example.springoauth.config.binder.AuthProperties;
 import com.example.springoauth.config.security.entity.LoginRequest;
 import com.example.springoauth.config.security.entity.PrincipalDetails;
 import com.example.springoauth.domain.users.event.JwtTokenUpdateEvent;
@@ -13,6 +13,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.security.authentication.InternalAuthenticationServiceException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
@@ -26,11 +27,11 @@ import java.util.Map;
 // User id, password 로그인
 @Slf4j
 public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilter {
-    private final JwtProperties jwtProperties;
+    private final AuthProperties authProperties;
     private final ApplicationEventPublisher publisher;
     private final ObjectMapper objectMapper;
-    public JwtAuthenticationFilter(JwtProperties jwtProperties, ApplicationEventPublisher publisher, ObjectMapper objectMapper) {
-        this.jwtProperties = jwtProperties;
+    public JwtAuthenticationFilter(AuthProperties authProperties, ApplicationEventPublisher publisher, ObjectMapper objectMapper) {
+        this.authProperties = authProperties;
         this.publisher = publisher;
         this.objectMapper = objectMapper;
         setFilterProcessesUrl("/api/login");
@@ -50,7 +51,7 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
                     ));
 
         } catch (Exception e) {
-            throw new RuntimeException(e);
+            throw new InternalAuthenticationServiceException(e.getMessage(), e.getCause());
         }
     }
 
@@ -60,15 +61,22 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
 
         String jwtToken = Jwts.builder()
                 .setSubject(loginId)
-                .setExpiration(new Date(System.currentTimeMillis() + jwtProperties.getExpiration()))
-                .signWith(jwtProperties.getSecretKey(), SignatureAlgorithm.HS256)
+                .setExpiration(new Date(System.currentTimeMillis() + authProperties.getJwt().getExpiration()))
+                .signWith(authProperties.getSecretKey(), SignatureAlgorithm.HS256)
                 .compact();
 
-        publisher.publishEvent(new JwtTokenUpdateEvent(loginId, jwtToken));
+        String refreshToken = Jwts.builder()
+                .setSubject(loginId)
+                .setExpiration(new Date(System.currentTimeMillis() + authProperties.getJwt().getRefreshTokenExpiry()))
+                .signWith(authProperties.getSecretKey(), SignatureAlgorithm.HS256)
+                .compact();
+
+        publisher.publishEvent(new JwtTokenUpdateEvent(loginId, jwtToken, refreshToken));
 
         response.addHeader("token", jwtToken);
         Map<String, String> body = new HashMap<>();
         body.put("AccessToken", jwtToken);
+        body.put("RefreshToken", refreshToken);
         String bodyStr = objectMapper.writeValueAsString(body);
         response.getWriter().write(bodyStr);
     }

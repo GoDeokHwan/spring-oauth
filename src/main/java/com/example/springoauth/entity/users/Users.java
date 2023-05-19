@@ -73,7 +73,26 @@ public class Users {
         return instance;
     }
 
-    public void changeToken(String token) {
+    public static Users ofCreate(String id, String name, String imageUrl, ProviderType providerType) {
+        Users instance = new Users();
+        instance.email = id;
+        instance.name = name;
+        instance.providerType = providerType;
+        instance.roleType = RoleType.USER;
+        instance.fileImage = imageUrl;
+        return instance;
+    }
+
+    public void changeToken(String token, String refreshToken) {
         this.token = token;
+        this.refreshToken = refreshToken;
+    }
+
+    public void changeName(String name) {
+        this.name = name;
+    }
+
+    public void changeImageUrl(String imageUrl) {
+        this.fileImage = imageUrl;
     }
 }

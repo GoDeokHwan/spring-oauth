@@ -7,9 +7,10 @@ public class JwtTokenUpdateEvent {
 
     private String loginId;
     private String token;
-
-    public JwtTokenUpdateEvent(String loginId, String token) {
+    private String refreshToken;
+    public JwtTokenUpdateEvent(String loginId, String token, String refreshToken) {
         this.loginId = loginId;
         this.token = token;
+        this.refreshToken = refreshToken;
     }
 }

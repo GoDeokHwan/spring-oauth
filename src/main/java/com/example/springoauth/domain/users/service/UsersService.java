@@ -29,11 +29,11 @@ public class UsersService {
         return UsersDTO.ofUser(usersRepository.save(users));
     }
 
-    public void updateToken(String loginId, String token) {
+    public void updateToken(String loginId, String token, String refreshToken) {
         Users users = usersRepository.findByEmail(loginId)
                 .orElseThrow(() -> new IllegalArgumentException());
 
-        users.changeToken(token);
+        users.changeToken(token, refreshToken);
     }
 
     public List<UsersDTO> get() {
