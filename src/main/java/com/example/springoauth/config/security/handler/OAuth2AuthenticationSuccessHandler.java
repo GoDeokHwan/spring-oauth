@@ -98,20 +98,9 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
         CookieUtils.deleteCookie(request, response, REFRESH_TOKEN);
         CookieUtils.addCookie(response, REFRESH_TOKEN, refreshToken, cookieMaxAge);
 
-        response.addHeader("Authorization", jwtToken);
-//        Map<String, String> body = new HashMap<>();
-//        body.put("AccessToken", jwtToken);
-//        String bodyStr = null;
-//        try {
-//            bodyStr = objectMapper.writeValueAsString(body);
-//            response.getWriter().write(bodyStr);
-//        } catch (JsonProcessingException e) {
-//            throw new RuntimeException(e);
-//        } catch (IOException e) {
-//            throw new RuntimeException(e);
-//        }
         return UriComponentsBuilder.fromUriString(targetUrl)
-                .queryParam("token", jwtToken)
+                .queryParam("AccessToken", jwtToken)
+                .queryParam("RefreshToken", refreshToken)
                 .build().toUriString();
     }
 
